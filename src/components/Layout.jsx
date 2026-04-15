@@ -18,9 +18,12 @@ export default function Layout() {
       <div className="mobile-top-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-            <img src="/logo.jpg" alt="SysCamisas Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src="/favicon.png" alt="ADD BB2 Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>SysCamisas</h2>
+          <div>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, lineHeight: 1.2, color: 'var(--text-main)' }}>ADD BB2</h2>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1 }}>Gestão de Pedidos</span>
+          </div>
         </div>
         <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
           <Menu size={28} />
