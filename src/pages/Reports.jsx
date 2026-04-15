@@ -2,10 +2,20 @@ import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 export default function Reports() {
   const { departments, orders, installments, payInstallment } = useStore();
   const [selectedDeptId, setSelectedDeptId] = useState('');
+  const [confirmingId, setConfirmingId] = useState(null);
+  const [loadingId, setLoadingId] = useState(null);
+
+  const handleDarBaixa = async (instId) => {
+    setLoadingId(instId);
+    setConfirmingId(null);
+    await payInstallment(instId);
+    setLoadingId(null);
+  };
 
   // Group data by department
   const getDeptSummary = (deptId) => {
@@ -131,13 +141,36 @@ export default function Reports() {
                           </td>
                           <td>
                             {!inst.isPaid && (
-                              <button className="btn btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => {
-                                if(window.confirm('Confirmar recebimento desta parcela?')) {
-                                  payInstallment(inst.id);
-                                }
-                              }}>
-                                Dar Baixa
-                              </button>
+                              confirmingId === inst.id ? (
+                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Confirmar?</span>
+                                  <button
+                                    className="btn btn-primary"
+                                    style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', gap: '0.3rem', display: 'flex', alignItems: 'center' }}
+                                    disabled={loadingId === inst.id}
+                                    onClick={() => handleDarBaixa(inst.id)}
+                                  >
+                                    <CheckCircle size={13} />
+                                    {loadingId === inst.id ? 'Salvando...' : 'Sim'}
+                                  </button>
+                                  <button
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', gap: '0.3rem', display: 'flex', alignItems: 'center' }}
+                                    onClick={() => setConfirmingId(null)}
+                                  >
+                                    <XCircle size={13} />
+                                    Não
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
+                                  onClick={() => setConfirmingId(inst.id)}
+                                >
+                                  Dar Baixa
+                                </button>
+                              )
                             )}
                           </td>
                         </tr>

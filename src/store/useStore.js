@@ -123,9 +123,17 @@ export const useStore = create((set, get) => ({
 
   // Pagamentos
   payInstallment: async (installmentId) => {
+    // Atualização otimista: UI responde instantaneamente
+    const now = new Date().toISOString();
+    set({
+      installments: get().installments.map(i =>
+        i.id === installmentId ? { ...i, isPaid: true, paidAt: now } : i
+      )
+    });
+    // Persiste no Supabase em segundo plano
     await supabase.from('installments').update({
       isPaid: true,
-      paidAt: new Date().toISOString()
+      paidAt: now
     }).eq('id', installmentId);
   }
 }));
