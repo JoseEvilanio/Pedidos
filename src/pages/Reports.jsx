@@ -11,6 +11,8 @@ export default function Reports() {
   const [confirmingId, setConfirmingId] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
 
+  const [personNameFilter, setPersonNameFilter] = useState('');
+
   const handleDarBaixa = async (instId) => {
     setLoadingId(instId);
     setConfirmingId(null);
@@ -102,13 +104,17 @@ export default function Reports() {
   };
 
   const selectedSummary = selectedDeptId ? getDeptSummary(selectedDeptId) : null;
+  
+  const filteredOrders = selectedSummary 
+    ? selectedSummary.orders.filter(order => order.personName.toLowerCase().includes(personNameFilter.toLowerCase()))
+    : [];
 
   return (
     <div>
       <h1 className="title">Relatórios e Controle de Pagamentos</h1>
 
-      <div className="glass-card" style={{ marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <div className="input-group" style={{ maxWidth: '400px', flex: '1 1 300px', margin: 0 }}>
+      <div className="glass-card form-row" style={{ marginBottom: '2rem', justifyContent: 'space-between' }}>
+        <div className="input-group" style={{ flex: 1, minWidth: '250px', maxWidth: '400px', margin: 0 }}>
           <label>Filtrar por Departamento</label>
           <select className="input-field" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)}>
             <option value="">-- Selecione para ver detalhes --</option>
@@ -117,7 +123,7 @@ export default function Reports() {
         </div>
         <button 
           className="btn btn-primary" 
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: 'fit-content', padding: '0.6rem 1.2rem' }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', height: 'fit-content', padding: '0.6rem 1.2rem' }}
           onClick={() => handleExportExcel(orders, 'Relatorio_Completo_Pedidos')}
         >
           <Download size={18} />
@@ -127,11 +133,11 @@ export default function Reports() {
 
       {selectedSummary && (
         <div className="glass-card" style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="form-row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 style={{ margin: 0 }}>Resumo do Departamento</h2>
             <button 
               className="btn btn-secondary" 
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
               onClick={() => handleExportExcel(selectedSummary.orders, `Relatorio_Depto`)}
             >
               <Download size={18} />
@@ -176,7 +182,18 @@ export default function Reports() {
         <div className="glass-card">
           <h2 style={{ marginBottom: '1rem' }}>Controle Detalhado por Integrante</h2>
           
-          {selectedSummary.orders.map(order => {
+          <div className="input-group" style={{ marginBottom: '1.5rem', maxWidth: '400px' }}>
+            <label>Filtrar por Integrante</label>
+            <input 
+              type="text" 
+              className="input-field" 
+              placeholder="Digite o nome para buscar..." 
+              value={personNameFilter}
+              onChange={(e) => setPersonNameFilter(e.target.value)}
+            />
+          </div>
+          
+          {filteredOrders.map(order => {
             const orderInsts = selectedSummary.installments.filter(i => i.orderId === order.id);
             const orderPaid = orderInsts.filter(i => i.isPaid).reduce((acc, i) => acc + i.amount, 0);
             
@@ -258,6 +275,7 @@ export default function Reports() {
             );
           })}
           {selectedSummary.orders.length === 0 && <p>Nenhum pedido para este departamento.</p>}
+          {selectedSummary.orders.length > 0 && filteredOrders.length === 0 && <p style={{ color: 'var(--text-muted)' }}>Nenhum integrante encontrado na busca.</p>}
         </div>
       )}
 
