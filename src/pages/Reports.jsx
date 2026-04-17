@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function Reports() {
   const { departments, orders, installments, payInstallment } = useStore();
@@ -15,6 +16,63 @@ export default function Reports() {
     setConfirmingId(null);
     await payInstallment(instId);
     setLoadingId(null);
+  };
+
+  const handleExportExcel = (ordersList, filenamePrefix) => {
+    if (!ordersList || ordersList.length === 0) {
+      alert("Não há pedidos para exportar.");
+      return;
+    }
+
+    const exportData = ordersList.map(order => {
+      const dept = departments.find(d => d.id === order.departmentId);
+      const deptName = dept ? dept.name : 'Desconhecido';
+      
+      const { P, M, G, GG, Babylook } = order.items;
+      const totalPecas = (P || 0) + (M || 0) + (G || 0) + (GG || 0) + (Babylook || 0);
+      
+      const orderInsts = installments.filter(i => i.orderId === order.id);
+      const valorPago = orderInsts.filter(i => i.isPaid).reduce((acc, i) => acc + i.amount, 0);
+      const valorAberto = order.totalAmount - valorPago;
+      
+      let status = 'Pendente';
+      if (valorPago === order.totalAmount && order.totalAmount > 0) status = 'Pago';
+      else if (valorPago > 0) status = 'Parcial';
+      
+      const formaPgto = order.paymentMethod === 'vista' ? 'À vista' : 'Parcelado';
+
+      return {
+        'Departamento': deptName,
+        'Responsável': dept ? dept.responsibleName : '',
+        'Integrante': order.personName,
+        'Pagamento': formaPgto,
+        'P': P || 0,
+        'M': M || 0,
+        'G': G || 0,
+        'GG': GG || 0,
+        'Babylook': Babylook || 0,
+        'Total Peças': totalPecas,
+        'Valor Total (R$)': order.totalAmount,
+        'Valor Pago (R$)': valorPago,
+        'Em Aberto (R$)': valorAberto,
+        'Status': status
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Pedidos");
+    
+    // Configurar largura das colunas
+    const wscols = [
+      {wch: 25}, {wch: 20}, {wch: 25}, {wch: 15},
+      {wch: 5}, {wch: 5}, {wch: 5}, {wch: 5}, {wch: 10},
+      {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 12}
+    ];
+    worksheet['!cols'] = wscols;
+
+    const dateStr = format(new Date(), 'dd-MM-yyyy_HH-mm');
+    XLSX.writeFile(workbook, `${filenamePrefix}_${dateStr}.xlsx`);
   };
 
   // Group data by department
@@ -49,19 +107,37 @@ export default function Reports() {
     <div>
       <h1 className="title">Relatórios e Controle de Pagamentos</h1>
 
-      <div className="glass-card" style={{ marginBottom: '2rem' }}>
-        <div className="input-group" style={{ maxWidth: '400px' }}>
+      <div className="glass-card" style={{ marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <div className="input-group" style={{ maxWidth: '400px', flex: '1 1 300px', margin: 0 }}>
           <label>Filtrar por Departamento</label>
           <select className="input-field" value={selectedDeptId} onChange={e => setSelectedDeptId(e.target.value)}>
             <option value="">-- Selecione para ver detalhes --</option>
             {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
         </div>
+        <button 
+          className="btn btn-primary" 
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: 'fit-content', padding: '0.6rem 1.2rem' }}
+          onClick={() => handleExportExcel(orders, 'Relatorio_Completo_Pedidos')}
+        >
+          <Download size={18} />
+          Exportar Relatório Completo
+        </button>
       </div>
 
       {selectedSummary && (
         <div className="glass-card" style={{ marginBottom: '2rem' }}>
-          <h2 style={{ marginBottom: '1rem' }}>Resumo do Departamento</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+            <h2 style={{ margin: 0 }}>Resumo do Departamento</h2>
+            <button 
+              className="btn btn-secondary" 
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+              onClick={() => handleExportExcel(selectedSummary.orders, `Relatorio_Depto`)}
+            >
+              <Download size={18} />
+              Exportar Apenas Este Departamento
+            </button>
+          </div>
           <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
             <div>
               <p className="subtitle">Status Geral</p>
