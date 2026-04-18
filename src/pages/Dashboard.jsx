@@ -67,7 +67,7 @@ export default function Dashboard() {
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <h2 style={{ marginBottom: '1rem' }}>Camisas por Tamanho (Geral)</h2>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          {['P', 'M', 'G', 'GG', 'Babylook'].map(size => (
+          {['P', 'M', 'G', 'GG', 'EXG', 'Babylook', 'Sob Medida'].map(size => (
             <div key={size} style={{ background: 'var(--background)', padding: '1rem 2rem', borderRadius: 'var(--radius-md)', textAlign: 'center', flex: 1, minWidth: '100px' }}>
               <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)' }}>{totalShirtsSizes[size] || 0}</div>
               <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{size}</div>

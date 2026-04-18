@@ -49,7 +49,7 @@ export default function ImportOrder() {
   if (!orderData) return <div style={{ padding: '2rem', textAlign: 'center' }}>Carregando dados...</div>;
 
   const dept = departments.find(d => d.id === orderData.departmentId);
-  const totalQty = Object.values(orderData.items).reduce((acc, q) => acc + (parseInt(q)||0), 0);
+  const totalQty = Object.entries(orderData.items).reduce((acc, [s, q]) => s !== 'medidasSobMedida' ? acc + (parseInt(q)||0) : acc, 0);
   const totalAmount = totalQty * 120;
 
   return (
@@ -70,12 +70,25 @@ export default function ImportOrder() {
 
         <div style={{ marginBottom: '1rem' }}>
           <p className="subtitle">Tamanhos</p>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             {Object.entries(orderData.items).map(([s, q]) => (
-              q > 0 ? <span key={s} className="badge badge-success" style={{ fontSize: '1rem' }}>{s}: {q}</span> : null
+              s !== 'medidasSobMedida' && q > 0 ? <span key={s} className="badge badge-success" style={{ fontSize: '1rem' }}>{s}: {q}</span> : null
             ))}
           </div>
         </div>
+
+        {orderData.items['Sob Medida'] > 0 && orderData.items.medidasSobMedida && (
+          <div style={{ marginBottom: '1rem' }}>
+            <p className="subtitle">Medidas "Sob Medida" (cm)</p>
+            <div style={{ background: 'var(--background)', padding: '0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}>
+              <strong>Pescoço:</strong> {orderData.items.medidasSobMedida.pescoco} <br/>
+              <strong>Ombro:</strong> {orderData.items.medidasSobMedida.ombro} <br/>
+              <strong>Peito:</strong> {orderData.items.medidasSobMedida.peito} <br/>
+              <strong>Cintura:</strong> {orderData.items.medidasSobMedida.cintura} <br/>
+              <strong>Quadril:</strong> {orderData.items.medidasSobMedida.quadril}
+            </div>
+          </div>
+        )}
 
         <div style={{ marginBottom: '1.5rem', background: 'var(--background)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>

@@ -30,8 +30,8 @@ export default function Reports() {
       const dept = departments.find(d => d.id === order.departmentId);
       const deptName = dept ? dept.name : 'Desconhecido';
       
-      const { P, M, G, GG, Babylook } = order.items;
-      const totalPecas = (P || 0) + (M || 0) + (G || 0) + (GG || 0) + (Babylook || 0);
+      const { P, M, G, GG, EXG, Babylook, 'Sob Medida': sobMedida, medidasSobMedida } = order.items;
+      const totalPecas = (P || 0) + (M || 0) + (G || 0) + (GG || 0) + (EXG || 0) + (Babylook || 0) + (sobMedida || 0);
       
       const orderInsts = installments.filter(i => i.orderId === order.id);
       const valorPago = orderInsts.filter(i => i.isPaid).reduce((acc, i) => acc + i.amount, 0);
@@ -52,12 +52,19 @@ export default function Reports() {
         'M': M || 0,
         'G': G || 0,
         'GG': GG || 0,
+        'EXG': EXG || 0,
         'Babylook': Babylook || 0,
+        'Sob Medida': sobMedida || 0,
         'Total Peças': totalPecas,
         'Valor Total (R$)': order.totalAmount,
         'Valor Pago (R$)': valorPago,
         'Em Aberto (R$)': valorAberto,
-        'Status': status
+        'Status': status,
+        'Medida: Pescoço': medidasSobMedida?.pescoco || '',
+        'Medida: Ombro': medidasSobMedida?.ombro || '',
+        'Medida: Peito': medidasSobMedida?.peito || '',
+        'Medida: Cintura': medidasSobMedida?.cintura || '',
+        'Medida: Quadril': medidasSobMedida?.quadril || ''
       };
     });
 
@@ -68,8 +75,9 @@ export default function Reports() {
     // Configurar largura das colunas
     const wscols = [
       {wch: 25}, {wch: 20}, {wch: 25}, {wch: 15},
-      {wch: 5}, {wch: 5}, {wch: 5}, {wch: 5}, {wch: 10},
-      {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 12}
+      {wch: 5}, {wch: 5}, {wch: 5}, {wch: 5}, {wch: 5}, {wch: 10}, {wch: 10},
+      {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 12},
+      {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}
     ];
     worksheet['!cols'] = wscols;
 
@@ -81,13 +89,15 @@ export default function Reports() {
   const getDeptSummary = (deptId) => {
     const deptOrders = orders.filter(o => o.departmentId === deptId);
     
-    const sizes = { P: 0, M: 0, G: 0, GG: 0, Babylook: 0 };
+    const sizes = { P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 };
     let totalQty = 0;
     
     deptOrders.forEach(o => {
       Object.entries(o.items).forEach(([s, q]) => {
-        sizes[s] += q;
-        totalQty += q;
+        if (s !== 'medidasSobMedida') {
+          sizes[s] = (sizes[s] || 0) + (parseInt(q) || 0);
+          totalQty += (parseInt(q) || 0);
+        }
       });
     });
 
@@ -199,7 +209,7 @@ export default function Reports() {
             
             return (
               <div key={order.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <div>
                     <h3 style={{ margin: 0 }}>{order.personName}</h3>
                     <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>

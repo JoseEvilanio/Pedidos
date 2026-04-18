@@ -12,10 +12,15 @@ export default function Catalogo() {
   const [personName, setPersonName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('vista');
   const [installmentsCount, setInstallmentsCount] = useState(1);
-  const [items, setItems] = useState({ P: 0, M: 0, G: 0, GG: 0, Babylook: 0 });
+  const [items, setItems] = useState({ P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 });
+  const [medidasSobMedida, setMedidasSobMedida] = useState({ pescoco: '', ombro: '', peito: '', cintura: '', quadril: '' });
 
   const handleSizeChange = (size, value) => {
     setItems(prev => ({ ...prev, [size]: parseInt(value) || 0 }));
+  };
+
+  const handleMedidaChange = (field, value) => {
+    setMedidasSobMedida(prev => ({ ...prev, [field]: value }));
   };
 
   const totalQty = Object.values(items).reduce((acc, q) => acc + q, 0);
@@ -25,12 +30,21 @@ export default function Catalogo() {
     if (!personName) return alert('Por favor, informe seu nome.');
     if (totalQty === 0) return alert('Selecione pelo menos uma camisa.');
 
+    if (items['Sob Medida'] > 0 && (!medidasSobMedida.pescoco || !medidasSobMedida.ombro || !medidasSobMedida.peito || !medidasSobMedida.cintura || !medidasSobMedida.quadril)) {
+      return alert('Por favor, preencha todas as medidas solicitadas para a(s) camisa(s) Sob Medida.');
+    }
+
     try {
+      const finalItems = { ...items };
+      if (finalItems['Sob Medida'] > 0) {
+        finalItems.medidasSobMedida = medidasSobMedida;
+      }
+
       // Save directly to the cloud Database
       await addOrder(
         deptId,
         personName,
-        items,
+        finalItems,
         paymentMethod,
         paymentMethod === 'parcelado' ? installmentsCount : 1
       );
@@ -38,7 +52,8 @@ export default function Catalogo() {
       alert(`Obrigado, ${personName}! Seu pedido foi enviado para o sistema!`);
       // Reset or guide them
       setPersonName('');
-      setItems({ P: 0, M: 0, G: 0, GG: 0, Babylook: 0 });
+      setItems({ P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 });
+      setMedidasSobMedida({ pescoco: '', ombro: '', peito: '', cintura: '', quadril: '' });
       setPaymentMethod('vista');
       setInstallmentsCount(1);
     } catch(err) {
@@ -68,14 +83,34 @@ export default function Catalogo() {
           <h3 style={{ margin: '2rem 0 1rem' }}>Tamanhos e Quantidades</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>Informe quantas camisas de cada tamanho você deseja.</p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '1rem' }}>
-            {['P', 'M', 'G', 'GG', 'Babylook'].map(size => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+            {['P', 'M', 'G', 'GG', 'EXG', 'Babylook', 'Sob Medida'].map(size => (
                <div key={size} className="input-group" style={{ marginBottom: 0 }}>
-                 <label style={{ textAlign: 'center' }}>{size}</label>
+                 <label style={{ textAlign: 'center', fontSize: '0.8rem' }}>{size}</label>
                  <input type="number" min="0" className="input-field" style={{ textAlign: 'center' }} value={items[size] || ''} onChange={e => handleSizeChange(size, e.target.value)} placeholder="0" />
                </div>
             ))}
           </div>
+
+          {items['Sob Medida'] > 0 && (
+            <div style={{ background: 'rgba(55, 48, 163, 0.05)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1.5rem' }}>
+              <h4 style={{ marginBottom: '1rem', fontSize: '0.95rem', color: 'var(--primary)' }}>Suas medidas para "Sob Medida" (em cm)</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
+                {['pescoco', 'ombro', 'peito', 'cintura', 'quadril'].map(field => (
+                  <div key={field} className="input-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '0.75rem', textTransform: 'capitalize' }}>{field}</label>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      placeholder="Ex: 45"
+                      value={medidasSobMedida[field]}
+                      onChange={e => handleMedidaChange(field, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={{ background: 'var(--background)', padding: '1rem', borderRadius: 'var(--radius-md)', margin: '1.5rem 0', textAlign: 'center' }}>
             <span style={{ fontSize: '1.125rem' }}>Total: <strong>{totalQty} camisa(s)</strong> = <strong>R$ {(totalQty * 120).toFixed(2)}</strong></span>

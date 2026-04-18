@@ -2,15 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { ShoppingBag, ChevronDown, ChevronUp, Users, Hash, Filter, Plus, X } from 'lucide-react';
 
-const SIZES = ['P', 'M', 'G', 'GG', 'Babylook'];
+const SIZES = ['P', 'M', 'G', 'GG', 'EXG', 'Babylook', 'Sob Medida'];
 const SHIRT_PRICE = 120;
 
 const SIZE_COLORS = {
-  P:        { bg: '#EDE9FE', text: '#5B21B6', border: '#C4B5FD' },
-  M:        { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD' },
-  G:        { bg: '#D1FAE5', text: '#065F46', border: '#6EE7B7' },
-  GG:       { bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },
-  Babylook: { bg: '#FCE7F3', text: '#9D174D', border: '#F9A8D4' },
+  P:          { bg: '#EDE9FE', text: '#5B21B6', border: '#C4B5FD' },
+  M:          { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD' },
+  G:          { bg: '#D1FAE5', text: '#065F46', border: '#6EE7B7' },
+  GG:         { bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },
+  EXG:        { bg: '#FFEDD5', text: '#C2410C', border: '#FDBA74' },
+  Babylook:   { bg: '#FCE7F3', text: '#9D174D', border: '#F9A8D4' },
+  'Sob Medida': { bg: '#E0E7FF', text: '#3730A3', border: '#A5B4FC' },
 };
 
 function SizeBadge({ size, qty }) {
@@ -34,7 +36,7 @@ function PersonCard({ order, deptName }) {
   const itemsWithQty = SIZES.filter(s => parseInt(order.items[s]) > 0);
 
   return (
-    <div style={{
+    <div className="responsive-card" style={{
       background: 'var(--card-bg)',
       border: '1px solid var(--border)',
       borderRadius: '0.75rem',
@@ -130,6 +132,7 @@ function DepartmentSection({ dept, orders }) {
     }}>
       {/* Header */}
       <div
+        className="responsive-card"
         onClick={() => setExpanded(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', gap: '1rem',
@@ -159,12 +162,7 @@ function DepartmentSection({ dept, orders }) {
           </div>
         </div>
 
-        {/* Size pill summary */}
-        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'flex-end', flex: 2 }}>
-          {SIZES.map(s => sizeTotals[s] > 0 ? (
-            <SizeBadge key={s} size={s} qty={sizeTotals[s]} />
-          ) : null)}
-        </div>
+
 
         {/* Stats */}
         <div style={{ textAlign: 'right', marginLeft: '1rem', flexShrink: 0 }}>
@@ -204,23 +202,38 @@ export default function Orders() {
   const [personName, setPersonName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('vista');
   const [installmentsCount, setInstallmentsCount] = useState(1);
-  const [items, setItems] = useState({ P: 0, M: 0, G: 0, GG: 0, Babylook: 0 });
+  const [items, setItems] = useState({ P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 });
+  const [medidasSobMedida, setMedidasSobMedida] = useState({ pescoco: '', ombro: '', peito: '', cintura: '', quadril: '' });
 
   const handleSizeChange = (size, value) => {
     setItems(prev => ({ ...prev, [size]: parseInt(value) || 0 }));
+  };
+
+  const handleMedidaChange = (field, value) => {
+    setMedidasSobMedida(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!departmentId) return alert('Selecione um departamento.');
     if (!personName) return alert('Informe o nome do integrante.');
+    
+    if (items['Sob Medida'] > 0 && (!medidasSobMedida.pescoco || !medidasSobMedida.ombro || !medidasSobMedida.peito || !medidasSobMedida.cintura || !medidasSobMedida.quadril)) {
+      return alert('Preencha todas as medidas solicitadas para as camisas Sob Medida.');
+    }
 
-    await addOrder(departmentId, personName, items, paymentMethod, installmentsCount);
+    const finalItems = { ...items };
+    if (finalItems['Sob Medida'] > 0) {
+      finalItems.medidasSobMedida = medidasSobMedida;
+    }
+
+    await addOrder(departmentId, personName, finalItems, paymentMethod, installmentsCount);
 
     setPersonName('');
     setPaymentMethod('vista');
     setInstallmentsCount(1);
-    setItems({ P: 0, M: 0, G: 0, GG: 0, Babylook: 0 });
+    setItems({ P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 });
+    setMedidasSobMedida({ pescoco: '', ombro: '', peito: '', cintura: '', quadril: '' });
     setShowForm(false);
   };
 
@@ -257,7 +270,7 @@ export default function Orders() {
 
       {/* ── Global Summary Bar ── */}
       {orders.length > 0 && (
-        <div style={{
+        <div className="responsive-card" style={{
           display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
           background: 'linear-gradient(135deg, var(--primary) 0%, #818CF8 100%)',
           borderRadius: '1rem', padding: '1.1rem 1.5rem', marginBottom: '1.5rem',
@@ -265,16 +278,7 @@ export default function Orders() {
         }}>
           <ShoppingBag size={22} />
           <div style={{ fontWeight: 700, fontSize: '1rem' }}>Resumo Geral</div>
-          <div style={{ flex: 1, display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {SIZES.map(s => globalTotals[s] > 0 ? (
-              <span key={s} style={{
-                padding: '0.2rem 0.6rem', borderRadius: '999px', fontWeight: 700,
-                fontSize: '0.8rem', background: 'rgba(255,255,255,0.2)', color: 'white',
-              }}>
-                {s} × {globalTotals[s]}
-              </span>
-            ) : null)}
-          </div>
+          <div style={{ flex: 1 }} />
           <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>
             {globalTotal} camisas
           </div>
@@ -318,13 +322,34 @@ export default function Orders() {
                   <input
                     type="number" min="0" max="99"
                     className="input-field"
-                    value={items[size]}
+                    value={items[size] || ''}
                     onChange={e => handleSizeChange(size, e.target.value)}
                     style={{ width: 72, textAlign: 'center', padding: '0.5rem' }}
                   />
                 </div>
               ))}
             </div>
+
+            {items['Sob Medida'] > 0 && (
+              <div style={{ background: 'rgba(55, 48, 163, 0.05)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1rem' }}>
+                <h4 style={{ marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--primary)' }}>Medidas para "Sob Medida" (em cm)</h4>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  {['pescoco', 'ombro', 'peito', 'cintura', 'quadril'].map(field => (
+                    <div key={field} className="input-group" style={{ marginBottom: 0, flex: 1, minWidth: '80px' }}>
+                      <label style={{ fontSize: '0.75rem', textTransform: 'capitalize' }}>{field}</label>
+                      <input 
+                        type="number" 
+                        className="input-field" 
+                        placeholder="Ex: 45"
+                        value={medidasSobMedida[field]}
+                        onChange={e => handleMedidaChange(field, e.target.value)}
+                        style={{ padding: '0.5rem' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {totalQty > 0 && (
               <div style={{
