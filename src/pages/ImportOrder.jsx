@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { AlertTriangle, CheckCircle2, Upload } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export default function ImportOrder() {
@@ -12,104 +13,164 @@ export default function ImportOrder() {
   useEffect(() => {
     try {
       const decodedPayload = decodeURIComponent(escape(window.atob(payload)));
-      const data = JSON.parse(decodedPayload);
-      setOrderData(data);
-    } catch (e) {
-      setError('Importação inválida ou corrompida. O link pode estar quebrado.');
+      setOrderData(JSON.parse(decodedPayload));
+    } catch (decodeError) {
+      setError('Importacao invalida ou corrompida. O link pode estar quebrado.');
     }
   }, [payload]);
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (!orderData) return;
     try {
-      addOrder(
-        orderData.departmentId, 
-        orderData.personName, 
-        orderData.items, 
-        orderData.paymentMethod, 
+      await addOrder(
+        orderData.departmentId,
+        orderData.personName,
+        orderData.items,
+        orderData.paymentMethod,
         orderData.installmentsCount
       );
-      alert('Pedido importado com sucesso!');
+      alert('Pedido importado com sucesso.');
       navigate('/orders');
-    } catch(e) {
-      alert('Erro inesperado ao importar pedido.');
+    } catch (importError) {
+      alert('Erro ao importar pedido.');
     }
   };
 
   if (error) {
     return (
-      <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-        <h1 className="title" style={{ color: 'var(--danger)' }}>Erro na Importação</h1>
-        <p className="subtitle">{error}</p>
-        <button className="btn btn-outline" onClick={() => navigate('/')} style={{ marginTop: '2rem' }}>Voltar ao Início</button>
+      <div className="page-shell" style={{ maxWidth: '680px', margin: '0 auto', paddingTop: '1.5rem' }}>
+        <section className="glass-card" style={{ textAlign: 'center' }}>
+          <AlertTriangle size={36} color="var(--danger)" style={{ marginBottom: '0.6rem' }} />
+          <h1 className="title" style={{ color: 'var(--danger)', marginBottom: '0.35rem' }}>
+            Erro na Importacao
+          </h1>
+          <p className="subtitle">{error}</p>
+          <button type="button" className="btn btn-outline" onClick={() => navigate('/')} style={{ marginTop: '1.1rem' }}>
+            Voltar ao Inicio
+          </button>
+        </section>
       </div>
     );
   }
 
-  if (!orderData) return <div style={{ padding: '2rem', textAlign: 'center' }}>Carregando dados...</div>;
+  if (!orderData) {
+    return (
+      <div className="page-shell" style={{ maxWidth: '680px', margin: '0 auto', paddingTop: '1.5rem' }}>
+        <section className="glass-card" style={{ textAlign: 'center' }}>
+          Carregando dados...
+        </section>
+      </div>
+    );
+  }
 
-  const dept = departments.find(d => d.id === orderData.departmentId);
-  const totalQty = Object.entries(orderData.items).reduce((acc, [s, q]) => s !== 'medidasSobMedida' ? acc + (parseInt(q)||0) : acc, 0);
+  const department = departments.find(item => item.id === orderData.departmentId);
+  const totalQty = Object.entries(orderData.items).reduce((acc, [key, qty]) => {
+    if (key === 'medidasSobMedida') return acc;
+    return acc + (parseInt(qty, 10) || 0);
+  }, 0);
   const totalAmount = totalQty * 120;
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-      <h1 className="title" style={{ textAlign: 'center' }}>Importar Novo Pedido</h1>
-      <p className="subtitle" style={{ textAlign: 'center', marginBottom: '2rem' }}>Você recebeu um pedido externo e precisa confirmar a importação para o sistema.</p>
-      
-      <div className="glass-card" style={{ marginBottom: '2rem' }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <p className="subtitle">Departamento</p>
-          <h3>{dept ? dept.name : 'Desconhecido (ID: ' + orderData.departmentId + ')'}</h3>
+    <div className="page-shell" style={{ maxWidth: '740px', margin: '0 auto', paddingTop: '1.2rem', paddingBottom: '1rem' }}>
+      <header className="page-header">
+        <div className="page-title-group">
+          <h1 className="page-title">Importar Pedido</h1>
+          <p className="page-subtitle">
+            Confira os dados recebidos e confirme para incluir no sistema.
+          </p>
         </div>
-        
-        <div style={{ marginBottom: '1rem' }}>
+        <span className="page-tag">
+          <Upload size={14} />
+          Confirmacao Manual
+        </span>
+      </header>
+
+      <section className="glass-card">
+        <div style={{ marginBottom: '0.9rem' }}>
+          <p className="subtitle">Departamento</p>
+          <h3>{department ? department.name : `Desconhecido (ID: ${orderData.departmentId})`}</h3>
+        </div>
+
+        <div style={{ marginBottom: '0.9rem' }}>
           <p className="subtitle">Integrante</p>
           <h3>{orderData.personName}</h3>
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '0.9rem' }}>
           <p className="subtitle">Tamanhos</p>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {Object.entries(orderData.items).map(([s, q]) => (
-              s !== 'medidasSobMedida' && q > 0 ? <span key={s} className="badge badge-success" style={{ fontSize: '1rem' }}>{s}: {q}</span> : null
-            ))}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+            {Object.entries(orderData.items).map(([size, qty]) =>
+              size !== 'medidasSobMedida' && qty > 0 ? (
+                <span key={size} className="badge badge-success" style={{ fontSize: '0.83rem' }}>
+                  {size}: {qty}
+                </span>
+              ) : null
+            )}
           </div>
         </div>
 
         {orderData.items['Sob Medida'] > 0 && orderData.items.medidasSobMedida && (
-          <div style={{ marginBottom: '1rem' }}>
-            <p className="subtitle">Medidas "Sob Medida" (cm)</p>
-            <div style={{ background: 'var(--background)', padding: '0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}>
-              <strong>Pescoço:</strong> {orderData.items.medidasSobMedida.pescoco} <br/>
-              <strong>Ombro:</strong> {orderData.items.medidasSobMedida.ombro} <br/>
-              <strong>Peito:</strong> {orderData.items.medidasSobMedida.peito} <br/>
-              <strong>Cintura:</strong> {orderData.items.medidasSobMedida.cintura} <br/>
-              <strong>Quadril:</strong> {orderData.items.medidasSobMedida.quadril}
+          <div style={{ marginBottom: '0.9rem' }}>
+            <p className="subtitle">Medidas Sob Medida (cm)</p>
+            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '0.7rem', background: 'var(--surface-alt)' }}>
+              <p>
+                <strong>Pescoco:</strong> {orderData.items.medidasSobMedida.pescoco}
+              </p>
+              <p>
+                <strong>Ombro:</strong> {orderData.items.medidasSobMedida.ombro}
+              </p>
+              <p>
+                <strong>Peito:</strong> {orderData.items.medidasSobMedida.peito}
+              </p>
+              <p>
+                <strong>Cintura:</strong> {orderData.items.medidasSobMedida.cintura}
+              </p>
+              <p>
+                <strong>Quadril:</strong> {orderData.items.medidasSobMedida.quadril}
+              </p>
             </div>
           </div>
         )}
 
-        <div style={{ marginBottom: '1.5rem', background: 'var(--background)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span>Total de Camisas:</span>
+        <div
+          style={{
+            marginBottom: '1.1rem',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--surface-alt)',
+            padding: '0.8rem',
+            display: 'grid',
+            gap: '0.4rem',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.6rem' }}>
+            <span>Total de Camisas</span>
             <strong>{totalQty}</strong>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span>Valor Total:</span>
-            <strong>R$ {totalAmount.toFixed(2)}</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.6rem' }}>
+            <span>Valor Total</span>
+            <strong>R$ {totalAmount.toFixed(2).replace('.', ',')}</strong>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Pagamento:</span>
-            <strong>{orderData.paymentMethod === 'vista' ? 'À vista' : `Parcelado em ${orderData.installmentsCount}x de R$ ${(totalAmount/orderData.installmentsCount).toFixed(2)}`}</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.6rem' }}>
+            <span>Pagamento</span>
+            <strong>
+              {orderData.paymentMethod === 'vista'
+                ? 'A vista'
+                : `Parcelado em ${orderData.installmentsCount}x`}
+            </strong>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => navigate('/')}>Cancelar / Descartar</button>
-          <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleImport}>Confirmar Importação</button>
+        <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
+          <button type="button" className="btn btn-outline" style={{ flex: '1 1 180px' }} onClick={() => navigate('/')}>
+            Cancelar
+          </button>
+          <button type="button" className="btn btn-primary" style={{ flex: '1 1 220px' }} onClick={handleImport}>
+            <CheckCircle2 size={16} />
+            Confirmar Importacao
+          </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

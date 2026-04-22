@@ -2,80 +2,96 @@ import React from 'react';
 import { useStore } from '../store/useStore';
 import { Shirt, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 
+const SIZE_ORDER = ['P', 'M', 'G', 'GG', 'EXG', 'Babylook', 'Sob Medida'];
+const brl = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
 export default function Dashboard() {
   const { orders, installments } = useStore();
 
   const totalShirtsSizes = orders.reduce((acc, order) => {
-    Object.entries(order.items).forEach(([size, qty]) => {
-      acc[size] = (acc[size] || 0) + (parseInt(qty) || 0);
+    Object.entries(order.items || {}).forEach(([size, qty]) => {
+      if (size !== 'medidasSobMedida') {
+        acc[size] = (acc[size] || 0) + (parseInt(qty, 10) || 0);
+      }
     });
     return acc;
   }, {});
 
-  const totalShirts = Object.values(totalShirtsSizes).reduce((a, b) => a + b, 0);
-
-  const totalPaid = installments.filter(i => i.isPaid).reduce((acc, curr) => acc + curr.amount, 0);
-  const totalPending = installments.filter(i => !i.isPaid).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalShirts = Object.values(totalShirtsSizes).reduce((sum, qty) => sum + qty, 0);
+  const totalPaid = installments.filter(inst => inst.isPaid).reduce((sum, inst) => sum + inst.amount, 0);
+  const totalPending = installments.filter(inst => !inst.isPaid).reduce((sum, inst) => sum + inst.amount, 0);
   const totalAmount = totalPaid + totalPending;
 
+  const metrics = [
+    {
+      label: 'Total de Camisas',
+      value: totalShirts,
+      icon: Shirt,
+      iconStyle: { background: 'rgba(13, 94, 166, 0.14)', color: '#0d5ea6' },
+    },
+    {
+      label: 'Arrecadado',
+      value: brl.format(totalPaid),
+      icon: DollarSign,
+      iconStyle: { background: 'rgba(15, 118, 110, 0.14)', color: '#0f766e' },
+    },
+    {
+      label: 'Pendente',
+      value: brl.format(totalPending),
+      icon: AlertCircle,
+      iconStyle: { background: 'rgba(199, 55, 75, 0.12)', color: '#c7374b' },
+    },
+    {
+      label: 'Total Projetado',
+      value: brl.format(totalAmount),
+      icon: TrendingUp,
+      iconStyle: { background: 'rgba(183, 121, 31, 0.14)', color: '#b7791f' },
+    },
+  ];
+
   return (
-    <div>
-      <h1 className="title">Dashboard</h1>
-      
-      <div className="grid-cards" style={{ marginBottom: '2rem' }}>
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '1rem', background: '#e0e7ff', color: '#4f46e5', borderRadius: '50%' }}>
-            <Shirt size={24} />
-          </div>
-          <div>
-            <div className="subtitle" style={{ fontSize: '0.875rem' }}>Total de Camisas</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalShirts}</div>
-          </div>
+    <div className="page-shell">
+      <header className="page-header">
+        <div className="page-title-group">
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">
+            Visao geral de vendas, status financeiro e distribuicao por tamanho.
+          </p>
         </div>
+        <span className="page-tag">{orders.length} pedido(s) registrado(s)</span>
+      </header>
 
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '1rem', background: '#d1fae5', color: '#059669', borderRadius: '50%' }}>
-            <DollarSign size={24} />
-          </div>
-          <div>
-            <div className="subtitle" style={{ fontSize: '0.875rem' }}>Arrecadado</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>R$ {totalPaid.toFixed(2)}</div>
-          </div>
-        </div>
+      <section className="grid-cards metric-grid">
+        {metrics.map(metric => {
+          const Icon = metric.icon;
+          return (
+            <article key={metric.label} className="glass-card metric-card">
+              <span className="metric-icon" style={metric.iconStyle}>
+                <Icon size={22} />
+              </span>
+              <div>
+                <p className="metric-label">{metric.label}</p>
+                <p className="metric-value">{metric.value}</p>
+              </div>
+            </article>
+          );
+        })}
+      </section>
 
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '1rem', background: '#fee2e2', color: '#dc2626', borderRadius: '50%' }}>
-            <AlertCircle size={24} />
-          </div>
-          <div>
-            <div className="subtitle" style={{ fontSize: '0.875rem' }}>Pendente</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>R$ {totalPending.toFixed(2)}</div>
-          </div>
-        </div>
-
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '1rem', background: '#fef3c7', color: '#d97706', borderRadius: '50%' }}>
-            <TrendingUp size={24} />
-          </div>
-          <div>
-            <div className="subtitle" style={{ fontSize: '0.875rem' }}>Total Projetado</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>R$ {totalAmount.toFixed(2)}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="glass-card" style={{ marginBottom: '2rem' }}>
-        <h2 style={{ marginBottom: '1rem' }}>Camisas por Tamanho (Geral)</h2>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          {['P', 'M', 'G', 'GG', 'EXG', 'Babylook', 'Sob Medida'].map(size => (
-            <div key={size} style={{ background: 'var(--background)', padding: '1rem 2rem', borderRadius: 'var(--radius-md)', textAlign: 'center', flex: 1, minWidth: '100px' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)' }}>{totalShirtsSizes[size] || 0}</div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{size}</div>
+      <section className="glass-card">
+        <h2 style={{ marginBottom: '0.85rem' }}>Camisas por Tamanho</h2>
+        <div className="size-grid">
+          {SIZE_ORDER.map(size => (
+            <div key={size} className="size-tile">
+              <div className="size-value">{totalShirtsSizes[size] || 0}</div>
+              <div className="size-label">{size}</div>
             </div>
           ))}
         </div>
-      </div>
-
+      </section>
     </div>
   );
 }

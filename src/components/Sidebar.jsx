@@ -2,46 +2,52 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, ShoppingBag, PieChart, X } from 'lucide-react';
 
+const NAV_ITEMS = [
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/departments', label: 'Departamentos', icon: Users },
+  { to: '/orders', label: 'Pedidos', icon: ShoppingBag },
+  { to: '/reports', label: 'Relatorios', icon: PieChart },
+];
+
 export default function Sidebar({ isOpen, closeSidebar }) {
   return (
-    <div className={`sidebar ${isOpen ? 'open' : ''}`}>
-      <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border)' }}>
-            <img src="/logo.jpg" alt="SysCamisas Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <div className="sidebar-brand">
+        <div className="brand-core">
+          <img src="/logo.jpg" alt="ADD BB2" className="brand-logo" />
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>ADD BB2</h2>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Gestão de Pedidos</span>
+            <h2 className="brand-title">ADD BB2</h2>
+            <p className="brand-subtitle">Gestao de Pedidos</p>
           </div>
         </div>
-        <button 
-          className="mobile-menu-btn d-md-none" 
+        <button
+          type="button"
+          className="mobile-menu-btn sidebar-close"
           onClick={closeSidebar}
-          style={{ padding: '0.5rem', display: window.innerWidth <= 768 ? 'block' : 'none' }}
+          aria-label="Fechar menu lateral"
         >
-          <X size={24} />
+          <X size={18} />
         </button>
       </div>
 
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <NavLink to="/" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'} end>
-          <LayoutDashboard size={20} />
-          <span>Dashboard</span>
-        </NavLink>
-        <NavLink to="/departments" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
-          <Users size={20} />
-          <span>Departamentos</span>
-        </NavLink>
-        <NavLink to="/orders" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
-          <ShoppingBag size={20} />
-          <span>Pedidos</span>
-        </NavLink>
-        <NavLink to="/reports" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
-          <PieChart size={20} />
-          <span>Relatórios</span>
-        </NavLink>
+      <nav className="sidebar-nav">
+        {NAV_ITEMS.map(item => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+            >
+              <Icon size={18} />
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
-    </div>
+
+      <div className="sidebar-footnote">Painel Administrativo</div>
+    </aside>
   );
 }

@@ -1,17 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
-import { ShoppingBag, ChevronDown, ChevronUp, Users, Hash, Filter, Plus, X } from 'lucide-react';
+import {
+  ShoppingBag, ChevronDown, ChevronUp, Users, Filter, Plus, X,
+  CheckCircle, Clock, CreditCard, DollarSign,
+} from 'lucide-react';
 
 const SIZES = ['P', 'M', 'G', 'GG', 'EXG', 'Babylook', 'Sob Medida'];
 const SHIRT_PRICE = 120;
 
 const SIZE_COLORS = {
-  P:          { bg: '#EDE9FE', text: '#5B21B6', border: '#C4B5FD' },
-  M:          { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD' },
-  G:          { bg: '#D1FAE5', text: '#065F46', border: '#6EE7B7' },
-  GG:         { bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },
-  EXG:        { bg: '#FFEDD5', text: '#C2410C', border: '#FDBA74' },
-  Babylook:   { bg: '#FCE7F3', text: '#9D174D', border: '#F9A8D4' },
+  P:            { bg: '#EDE9FE', text: '#5B21B6', border: '#C4B5FD' },
+  M:            { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD' },
+  G:            { bg: '#D1FAE5', text: '#065F46', border: '#6EE7B7' },
+  GG:           { bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },
+  EXG:          { bg: '#FFEDD5', text: '#C2410C', border: '#FDBA74' },
+  Babylook:     { bg: '#FCE7F3', text: '#9D174D', border: '#F9A8D4' },
   'Sob Medida': { bg: '#E0E7FF', text: '#3730A3', border: '#A5B4FC' },
 };
 
@@ -31,88 +34,298 @@ function SizeBadge({ size, qty }) {
   );
 }
 
-function PersonCard({ order, deptName }) {
-  const totalQty = Object.values(order.items).reduce((acc, q) => acc + (parseInt(q) || 0), 0);
-  const itemsWithQty = SIZES.filter(s => parseInt(order.items[s]) > 0);
+// ─── Installment Row ────────────────────────────────────────────────────────
+
+function InstallmentRow({ inst, orderId, onPay }) {
+  const [customValue, setCustomValue] = useState('');
+  const [paying, setPaying] = useState(false);
+  const [inputVisible, setInputVisible] = useState(false);
+
+  const handlePay = async () => {
+    const val = parseFloat(customValue.replace(',', '.'));
+    if (!val || val <= 0) return alert('Informe um valor válido para pagamento.');
+    setPaying(true);
+    await onPay(orderId, val);
+    setPaying(false);
+    setCustomValue('');
+    setInputVisible(false);
+  };
+
+  const dueDateStr = inst.dueDate
+    ? new Date(inst.dueDate).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+    : '-';
 
   return (
-    <div className="responsive-card" style={{
-      background: 'var(--card-bg)',
-      border: '1px solid var(--border)',
-      borderRadius: '0.75rem',
-      padding: '1rem 1.25rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '1rem',
-      transition: 'box-shadow 0.2s',
-      cursor: 'default',
-    }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
-    >
-      {/* Avatar */}
-      <div style={{
-        width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
-        background: 'linear-gradient(135deg, var(--primary), #818CF8)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: 'white', fontWeight: 700, fontSize: '1rem',
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap',
+      padding: '0.6rem 0.9rem',
+      borderRadius: '0.6rem',
+      background: inst.isPaid ? 'rgba(16,185,129,0.06)' : 'rgba(79,70,229,0.04)',
+      border: `1px solid ${inst.isPaid ? 'rgba(16,185,129,0.2)' : 'rgba(79,70,229,0.12)'}`,
+      transition: 'all 0.2s',
+    }}>
+      {/* Parcela nº */}
+      <span style={{
+        fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)',
+        minWidth: 28, textAlign: 'center',
       }}>
-        {order.personName.charAt(0).toUpperCase()}
-      </div>
+        {inst.index}ª
+      </span>
 
-      {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      {/* Valor */}
+      <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)', minWidth: 80 }}>
+        R$ {parseFloat(inst.amount).toFixed(2).replace('.', ',')}
+      </span>
+
+      {/* Vencimento */}
+      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', flex: 1 }}>
+        {dueDateStr}
+      </span>
+
+      {/* Status */}
+      {inst.isPaid ? (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+          padding: '0.2rem 0.7rem', borderRadius: '999px',
+          background: '#D1FAE5', color: '#065F46', fontSize: '0.75rem', fontWeight: 700,
+        }}>
+          <CheckCircle size={12} /> Pago
+        </span>
+      ) : (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+          padding: '0.2rem 0.7rem', borderRadius: '999px',
+          background: '#FEF3C7', color: '#92400E', fontSize: '0.75rem', fontWeight: 700,
+        }}>
+          <Clock size={12} /> Pendente
+        </span>
+      )}
+
+      {/* Ação de pagamento */}
+      {!inst.isPaid && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>
-            {order.personName}
-          </span>
-          <span style={{
-            fontSize: '0.72rem', padding: '0.1rem 0.5rem', borderRadius: '999px',
-            background: 'rgba(79,70,229,0.1)', color: 'var(--primary)', fontWeight: 600
-          }}>
-            {deptName}
-          </span>
+          {inputVisible ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>R$</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder={parseFloat(inst.amount).toFixed(2)}
+                  value={customValue}
+                  onChange={e => setCustomValue(e.target.value)}
+                  style={{
+                    width: 90, padding: '0.3rem 0.5rem', borderRadius: '0.4rem',
+                    border: '1.5px solid var(--primary)', fontSize: '0.85rem',
+                    outline: 'none', background: 'var(--card-bg)', color: 'var(--text-main)',
+                    fontWeight: 600,
+                  }}
+                  autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter') handlePay(); if (e.key === 'Escape') setInputVisible(false); }}
+                />
+              </div>
+              <button
+                onClick={handlePay}
+                disabled={paying}
+                style={{
+                  padding: '0.3rem 0.75rem', borderRadius: '0.4rem', border: 'none',
+                  background: 'var(--primary)', color: 'white', fontWeight: 700,
+                  fontSize: '0.78rem', cursor: 'pointer', opacity: paying ? 0.6 : 1,
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                {paying ? '...' : 'Confirmar'}
+              </button>
+              <button
+                onClick={() => { setInputVisible(false); setCustomValue(''); }}
+                style={{
+                  padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: '1px solid var(--border)',
+                  background: 'transparent', color: 'var(--text-muted)', fontWeight: 600,
+                  fontSize: '0.78rem', cursor: 'pointer',
+                }}
+              >
+                <X size={12} />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setInputVisible(true)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                padding: '0.3rem 0.75rem', borderRadius: '0.4rem', border: 'none',
+                background: 'linear-gradient(135deg, var(--primary), #818CF8)',
+                color: 'white', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(79,70,229,0.25)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(79,70,229,0.35)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(79,70,229,0.25)'; }}
+            >
+              <DollarSign size={12} /> Pagar
+            </button>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
-          {itemsWithQty.length > 0
-            ? SIZES.map(s => parseInt(order.items[s]) > 0
-                ? <SizeBadge key={s} size={s} qty={parseInt(order.items[s])} />
-                : null)
-            : <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sem itens</span>
-          }
-        </div>
-      </div>
-
-      {/* Totals */}
-      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>
-          {totalQty} {totalQty === 1 ? 'camisa' : 'camisas'}
-        </div>
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          R$ {(totalQty * SHIRT_PRICE).toFixed(2).replace('.', ',')}
-        </div>
-        <div style={{ fontSize: '0.72rem', marginTop: '0.2rem' }}>
-          <span style={{
-            padding: '0.1rem 0.4rem', borderRadius: '999px',
-            background: order.paymentMethod === 'vista' ? '#D1FAE5' : '#FEF3C7',
-            color: order.paymentMethod === 'vista' ? '#065F46' : '#92400E',
-            fontWeight: 600
-          }}>
-            {order.paymentMethod === 'vista' ? 'À vista' : 'Parcelado'}
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function DepartmentSection({ dept, orders }) {
+// ─── Person Card ─────────────────────────────────────────────────────────────
+
+function PersonCard({ order, deptName, orderInstallments, onPayCustom }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const totalQty = Object.values(order.items).reduce((acc, q) => acc + (parseInt(q) || 0), 0);
+  const itemsWithQty = SIZES.filter(s => parseInt(order.items[s]) > 0);
+
+  const paidInstallments = orderInstallments.filter(i => i.isPaid).length;
+  const totalInstallments = orderInstallments.length;
+  const totalPaid = orderInstallments.reduce((sum, i) => sum + (i.isPaid ? parseFloat(i.amount) : 0), 0);
+  const totalRemaining = (order.totalAmount || 0) - totalPaid;
+  const allPaid = totalInstallments > 0 && paidInstallments === totalInstallments;
+
+  const sortedInstallments = [...orderInstallments].sort((a, b) => a.index - b.index);
+
+  return (
+    <div
+      className="responsive-card"
+      style={{
+        background: 'var(--card-bg)',
+        border: `1px solid ${allPaid ? 'rgba(16,185,129,0.3)' : 'var(--border)'}`,
+        borderRadius: '0.75rem',
+        overflow: 'hidden',
+        transition: 'box-shadow 0.2s',
+      }}
+      onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
+      onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+    >
+      {/* ── Card Header ── */}
+      <div
+        onClick={() => setExpanded(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '1rem',
+          padding: '1rem 1.25rem', cursor: 'pointer',
+        }}
+      >
+        {/* Avatar */}
+        <div style={{
+          width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+          background: allPaid
+            ? 'linear-gradient(135deg, #10B981, #34D399)'
+            : 'linear-gradient(135deg, var(--primary), #818CF8)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'white', fontWeight: 700, fontSize: '1rem',
+        }}>
+          {allPaid ? <CheckCircle size={20} /> : order.personName.charAt(0).toUpperCase()}
+        </div>
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>
+              {order.personName}
+            </span>
+            <span style={{
+              fontSize: '0.72rem', padding: '0.1rem 0.5rem', borderRadius: '999px',
+              background: 'rgba(79,70,229,0.1)', color: 'var(--primary)', fontWeight: 600
+            }}>
+              {deptName}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
+            {itemsWithQty.length > 0
+              ? SIZES.map(s => parseInt(order.items[s]) > 0
+                  ? <SizeBadge key={s} size={s} qty={parseInt(order.items[s])} />
+                  : null)
+              : <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sem itens</span>
+            }
+          </div>
+        </div>
+
+        {/* Totals */}
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>
+            {totalQty} {totalQty === 1 ? 'camisa' : 'camisas'}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            R$ {(order.totalAmount || 0).toFixed(2).replace('.', ',')}
+          </div>
+          {/* Status de pagamento */}
+          <div style={{ fontSize: '0.72rem', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'flex-end' }}>
+            {allPaid ? (
+              <span style={{ padding: '0.1rem 0.4rem', borderRadius: '999px', background: '#D1FAE5', color: '#065F46', fontWeight: 600 }}>
+                ✓ Quitado
+              </span>
+            ) : order.paymentMethod === 'vista' ? (
+              <span style={{ padding: '0.1rem 0.4rem', borderRadius: '999px', background: '#FEF3C7', color: '#92400E', fontWeight: 600 }}>
+                À vista
+              </span>
+            ) : (
+              <span style={{ padding: '0.1rem 0.4rem', borderRadius: '999px', background: '#FEF3C7', color: '#92400E', fontWeight: 600 }}>
+                {paidInstallments}/{totalInstallments} parcelas
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Expand toggle */}
+        {orderInstallments.length > 0 && (
+          <div style={{ color: 'var(--text-muted)', marginLeft: '0.25rem' }}>
+            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        )}
+      </div>
+
+      {/* ── Installments Panel ── */}
+      {expanded && orderInstallments.length > 0 && (
+        <div style={{
+          borderTop: '1px solid var(--border)',
+          padding: '0.75rem 1.25rem 1rem',
+          background: 'rgba(0,0,0,0.015)',
+        }}>
+          {/* Summary bar */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
+            marginBottom: '0.75rem', padding: '0.5rem 0.75rem',
+            background: 'rgba(79,70,229,0.05)', borderRadius: '0.5rem',
+          }}>
+            <CreditCard size={14} color="var(--primary)" />
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Pago: <strong style={{ color: '#10B981' }}>R$ {totalPaid.toFixed(2).replace('.', ',')}</strong>
+            </span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Restante: <strong style={{ color: totalRemaining > 0 ? '#F59E0B' : '#10B981' }}>
+                R$ {Math.max(totalRemaining, 0).toFixed(2).replace('.', ',')}
+              </strong>
+            </span>
+          </div>
+
+          {/* Installment rows */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            {sortedInstallments.map(inst => (
+              <InstallmentRow
+                key={inst.id}
+                inst={inst}
+                orderId={order.id}
+                onPay={onPayCustom}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Department Section ───────────────────────────────────────────────────────
+
+function DepartmentSection({ dept, orders, installments, onPayCustom }) {
   const [expanded, setExpanded] = useState(true);
 
   const deptOrders = orders.filter(o => o.departmentId === dept.id);
   if (deptOrders.length === 0) return null;
 
-  // Aggregate sizes for this dept
   const sizeTotals = SIZES.reduce((acc, s) => {
     acc[s] = deptOrders.reduce((sum, o) => sum + (parseInt(o.items[s]) || 0), 0);
     return acc;
@@ -143,7 +356,6 @@ function DepartmentSection({ dept, orders }) {
           userSelect: 'none',
         }}
       >
-        {/* Dept Icon */}
         <div style={{
           width: 40, height: 40, borderRadius: '0.6rem', flexShrink: 0,
           background: 'linear-gradient(135deg, var(--primary), #818CF8)',
@@ -152,7 +364,6 @@ function DepartmentSection({ dept, orders }) {
           <Users size={18} color="white" />
         </div>
 
-        {/* Name & meta */}
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-main)' }}>
             {dept.name}
@@ -162,9 +373,6 @@ function DepartmentSection({ dept, orders }) {
           </div>
         </div>
 
-
-
-        {/* Stats */}
         <div style={{ textAlign: 'right', marginLeft: '1rem', flexShrink: 0 }}>
           <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{totalShirts} camisas</div>
           <div style={{ fontSize: '0.82rem', color: 'var(--secondary)', fontWeight: 600 }}>
@@ -181,7 +389,13 @@ function DepartmentSection({ dept, orders }) {
       {expanded && (
         <div style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {deptOrders.map(o => (
-            <PersonCard key={o.id} order={o} deptName={dept.name} />
+            <PersonCard
+              key={o.id}
+              order={o}
+              deptName={dept.name}
+              orderInstallments={installments.filter(i => i.orderId === o.id)}
+              onPayCustom={onPayCustom}
+            />
           ))}
         </div>
       )}
@@ -192,7 +406,7 @@ function DepartmentSection({ dept, orders }) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function Orders() {
-  const { departments, addOrder, orders } = useStore();
+  const { departments, addOrder, orders, installments, payInstallmentCustom } = useStore();
 
   const [showForm, setShowForm] = useState(false);
   const [filterDeptId, setFilterDeptId] = useState('');
@@ -217,7 +431,7 @@ export default function Orders() {
     e.preventDefault();
     if (!departmentId) return alert('Selecione um departamento.');
     if (!personName) return alert('Informe o nome do integrante.');
-    
+
     if (items['Sob Medida'] > 0 && (!medidasSobMedida.pescoco || !medidasSobMedida.ombro || !medidasSobMedida.peito || !medidasSobMedida.cintura || !medidasSobMedida.quadril)) {
       return alert('Preencha todas as medidas solicitadas para as camisas Sob Medida.');
     }
@@ -239,7 +453,6 @@ export default function Orders() {
 
   const totalQty = Object.values(items).reduce((acc, q) => acc + q, 0);
 
-  // Global size totals (all depts)
   const globalTotals = useMemo(() => SIZES.reduce((acc, s) => {
     acc[s] = orders.reduce((sum, o) => sum + (parseInt(o.items[s]) || 0), 0);
     return acc;
@@ -248,25 +461,22 @@ export default function Orders() {
   const globalTotal = Object.values(globalTotals).reduce((a, b) => a + b, 0);
   const globalValue = orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
 
-  // Filter departments to display
   const visibleDepts = filterDeptId
     ? departments.filter(d => d.id === filterDeptId)
     : departments;
 
   return (
-    <div>
+    <div className="page-shell">
       {/* ── Page Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 className="title" style={{ marginBottom: 0 }}>Pedidos</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            Gerencie os pedidos de camisas por departamento
-          </p>
+      <header className="page-header">
+        <div className="page-title-group">
+          <h1 className="page-title">Pedidos</h1>
+          <p className="page-subtitle">Gerencie os pedidos de camisas por departamento.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm(v => !v)} style={{ gap: '0.5rem' }}>
           {showForm ? <><X size={16} /> Fechar</> : <><Plus size={16} /> Novo Pedido</>}
         </button>
-      </div>
+      </header>
 
       {/* ── Global Summary Bar ── */}
       {orders.length > 0 && (
@@ -337,9 +547,9 @@ export default function Orders() {
                   {['pescoco', 'ombro', 'peito', 'cintura', 'quadril'].map(field => (
                     <div key={field} className="input-group" style={{ marginBottom: 0, flex: 1, minWidth: '80px' }}>
                       <label style={{ fontSize: '0.75rem', textTransform: 'capitalize' }}>{field}</label>
-                      <input 
-                        type="number" 
-                        className="input-field" 
+                      <input
+                        type="number"
+                        className="input-field"
                         placeholder="Ex: 45"
                         value={medidasSobMedida[field]}
                         onChange={e => handleMedidaChange(field, e.target.value)}
@@ -439,7 +649,13 @@ export default function Orders() {
         </div>
       ) : (
         visibleDepts.map(dept => (
-          <DepartmentSection key={dept.id} dept={dept} orders={orders} />
+          <DepartmentSection
+            key={dept.id}
+            dept={dept}
+            orders={orders}
+            installments={installments}
+            onPayCustom={payInstallmentCustom}
+          />
         ))
       )}
     </div>

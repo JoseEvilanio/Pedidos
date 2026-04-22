@@ -135,5 +135,72 @@ export const useStore = create((set, get) => ({
       isPaid: true,
       paidAt: now
     }).eq('id', installmentId);
-  }
+  },
+
+  // Pagamento avulço: deduz valor livre das parcelas pendentes em ordem
+  payInstallmentCustom: async (orderId, amountPaid) => {
+    if (!amountPaid || amountPaid <= 0) return;
+
+    const allInstallments = get().installments;
+    // Parcelas pendentes deste pedido, em ordem
+    const pending = allInstallments
+      .filter(i => i.orderId === orderId && !i.isPaid)
+      .sort((a, b) => a.index - b.index);
+
+    if (pending.length === 0) return;
+
+    let remaining = parseFloat(amountPaid);
+    const updates = []; // { id, isPaid, paidAt, amount, paidAmount }
+    const now = new Date().toISOString();
+
+    for (const inst of pending) {
+      if (remaining <= 0) break;
+
+      const instAmount = parseFloat(inst.amount);
+
+      if (remaining >= instAmount) {
+        // Paga a parcela inteira
+        updates.push({
+          id: inst.id,
+          isPaid: true,
+          paidAt: now,
+          amount: instAmount,
+          paidAmount: instAmount,
+        });
+        remaining = parseFloat((remaining - instAmount).toFixed(2));
+      } else {
+        // Paga parcialmente — reduz o valor restante desta parcela
+        const newAmount = parseFloat((instAmount - remaining).toFixed(2));
+        updates.push({
+          id: inst.id,
+          isPaid: false,
+          paidAt: null,
+          amount: newAmount,
+          paidAmount: remaining,
+        });
+        remaining = 0;
+      }
+    }
+
+    // Atualização otimista no estado local
+    set({
+      installments: allInstallments.map(i => {
+        const upd = updates.find(u => u.id === i.id);
+        if (!upd) return i;
+        return { ...i, isPaid: upd.isPaid, paidAt: upd.paidAt, amount: upd.amount, paidAmount: upd.paidAmount };
+      })
+    });
+
+    // Persistir no Supabase
+    await Promise.all(
+      updates.map(upd =>
+        supabase.from('installments').update({
+          isPaid: upd.isPaid,
+          paidAt: upd.paidAt,
+          amount: upd.amount,
+          paidAmount: upd.paidAmount,
+        }).eq('id', upd.id)
+      )
+    );
+  },
 }));
