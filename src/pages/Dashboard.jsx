@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../store/useStore';
 import { Shirt, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 
-const SIZE_ORDER = ['P', 'M', 'G', 'GG', 'EXG', 'Babylook', 'Sob Medida'];
+const SIZE_ORDER = ['PP', 'P', 'M', 'G', 'GG', 'EXG', 'PP Babylook', 'P Babylook', 'M Babylook', 'G Babylook', 'GG Babylook', 'EXG Babylook', 'Sob Medida'];
 const brl = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',

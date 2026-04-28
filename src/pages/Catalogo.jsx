@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Shirt } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
-const SIZES = ['P', 'M', 'G', 'GG', 'EXG', 'Babylook', 'Sob Medida'];
+const SIZES = ['PP', 'P', 'M', 'G', 'GG', 'EXG', 'PP Babylook', 'P Babylook', 'M Babylook', 'G Babylook', 'GG Babylook', 'EXG Babylook', 'Sob Medida'];
 const SHIRT_PRICE = 120;
 
 export default function Catalogo() {
@@ -15,7 +15,7 @@ export default function Catalogo() {
   const [personName, setPersonName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('vista');
   const [installmentsCount, setInstallmentsCount] = useState(1);
-  const [items, setItems] = useState({ P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 });
+  const [items, setItems] = useState({ PP: 0, P: 0, M: 0, G: 0, GG: 0, EXG: 0, 'PP Babylook': 0, 'P Babylook': 0, 'M Babylook': 0, 'G Babylook': 0, 'GG Babylook': 0, 'EXG Babylook': 0, 'Sob Medida': 0 });
   const [medidasSobMedida, setMedidasSobMedida] = useState({
     pescoco: '',
     ombro: '',
@@ -77,7 +77,7 @@ export default function Catalogo() {
       setPersonName('');
       setPaymentMethod('vista');
       setInstallmentsCount(1);
-      setItems({ P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 });
+      setItems({ PP: 0, P: 0, M: 0, G: 0, GG: 0, EXG: 0, 'PP Babylook': 0, 'P Babylook': 0, 'M Babylook': 0, 'G Babylook': 0, 'GG Babylook': 0, 'EXG Babylook': 0, 'Sob Medida': 0 });
       setMedidasSobMedida({ pescoco: '', ombro: '', peito: '', cintura: '', quadril: '' });
     } catch (error) {
       alert('Erro ao salvar o pedido. Tente novamente em instantes.');

@@ -28,9 +28,11 @@ export default function Reports() {
     const exportData = ordersList.map(order => {
       const dept = departments.find(d => d.id === order.departmentId);
       const deptName = dept ? dept.name : 'Desconhecido';
-      const { P, M, G, GG, EXG, Babylook, 'Sob Medida': sobMedida, medidasSobMedida } = order.items;
+      const { PP, P, M, G, GG, EXG, 'PP Babylook': PP_BL, 'P Babylook': P_BL, 'M Babylook': M_BL, 'G Babylook': G_BL, 'GG Babylook': GG_BL, 'EXG Babylook': EXG_BL, 'Sob Medida': sobMedida, medidasSobMedida } = order.items || {};
       const totalPecas =
-        (P || 0) + (M || 0) + (G || 0) + (GG || 0) + (EXG || 0) + (Babylook || 0) + (sobMedida || 0);
+        (PP || 0) + (P || 0) + (M || 0) + (G || 0) + (GG || 0) + (EXG || 0) +
+        (PP_BL || 0) + (P_BL || 0) + (M_BL || 0) + (G_BL || 0) + (GG_BL || 0) + (EXG_BL || 0) +
+        (sobMedida || 0);
 
       const orderInsts = installments.filter(i => i.orderId === order.id);
       const valorPago = orderInsts.filter(i => i.isPaid).reduce((acc, i) => acc + i.amount, 0);
@@ -47,12 +49,18 @@ export default function Reports() {
         Responsavel: dept ? dept.responsibleName : '',
         Integrante: order.personName,
         Pagamento: formaPgto,
+        PP: PP || 0,
         P: P || 0,
         M: M || 0,
         G: G || 0,
         GG: GG || 0,
         EXG: EXG || 0,
-        Babylook: Babylook || 0,
+        'PP Babylook': PP_BL || 0,
+        'P Babylook': P_BL || 0,
+        'M Babylook': M_BL || 0,
+        'G Babylook': G_BL || 0,
+        'GG Babylook': GG_BL || 0,
+        'EXG Babylook': EXG_BL || 0,
         'Sob Medida': sobMedida || 0,
         'Total Pecas': totalPecas,
         'Valor Total (R$)': order.totalAmount,
@@ -83,7 +91,7 @@ export default function Reports() {
 
   const getDeptSummary = deptId => {
     const deptOrders = orders.filter(o => o.departmentId === deptId);
-    const sizes = { P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 };
+    const sizes = { PP: 0, P: 0, M: 0, G: 0, GG: 0, EXG: 0, 'PP Babylook': 0, 'P Babylook': 0, 'M Babylook': 0, 'G Babylook': 0, 'GG Babylook': 0, 'EXG Babylook': 0, 'Sob Medida': 0 };
     let totalQty = 0;
 
     deptOrders.forEach(order => {

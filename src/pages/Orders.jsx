@@ -5,16 +5,22 @@ import {
   CheckCircle, Clock, CreditCard, DollarSign,
 } from 'lucide-react';
 
-const SIZES = ['P', 'M', 'G', 'GG', 'EXG', 'Babylook', 'Sob Medida'];
+const SIZES = ['PP', 'P', 'M', 'G', 'GG', 'EXG', 'PP Babylook', 'P Babylook', 'M Babylook', 'G Babylook', 'GG Babylook', 'EXG Babylook', 'Sob Medida'];
 const SHIRT_PRICE = 120;
 
 const SIZE_COLORS = {
+  PP:           { bg: '#F3F4F6', text: '#374151', border: '#D1D5DB' },
   P:            { bg: '#EDE9FE', text: '#5B21B6', border: '#C4B5FD' },
   M:            { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD' },
   G:            { bg: '#D1FAE5', text: '#065F46', border: '#6EE7B7' },
   GG:           { bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },
   EXG:          { bg: '#FFEDD5', text: '#C2410C', border: '#FDBA74' },
-  Babylook:     { bg: '#FCE7F3', text: '#9D174D', border: '#F9A8D4' },
+  'PP Babylook':{ bg: '#FCE7F3', text: '#BE185D', border: '#FBCFE8' },
+  'P Babylook': { bg: '#FCE7F3', text: '#9D174D', border: '#F9A8D4' },
+  'M Babylook': { bg: '#FBCFE8', text: '#831843', border: '#F472B6' },
+  'G Babylook': { bg: '#F9A8D4', text: '#701A75', border: '#EC4899' },
+  'GG Babylook':{ bg: '#F472B6', text: '#4A044E', border: '#DB2777' },
+  'EXG Babylook':{ bg: '#EC4899', text: '#831843', border: '#BE185D' },
   'Sob Medida': { bg: '#E0E7FF', text: '#3730A3', border: '#A5B4FC' },
 };
 
@@ -416,7 +422,7 @@ export default function Orders() {
   const [personName, setPersonName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('vista');
   const [installmentsCount, setInstallmentsCount] = useState(1);
-  const [items, setItems] = useState({ P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 });
+  const [items, setItems] = useState({ PP: 0, P: 0, M: 0, G: 0, GG: 0, EXG: 0, 'PP Babylook': 0, 'P Babylook': 0, 'M Babylook': 0, 'G Babylook': 0, 'GG Babylook': 0, 'EXG Babylook': 0, 'Sob Medida': 0 });
   const [medidasSobMedida, setMedidasSobMedida] = useState({ pescoco: '', ombro: '', peito: '', cintura: '', quadril: '' });
 
   const handleSizeChange = (size, value) => {
@@ -446,7 +452,7 @@ export default function Orders() {
     setPersonName('');
     setPaymentMethod('vista');
     setInstallmentsCount(1);
-    setItems({ P: 0, M: 0, G: 0, GG: 0, EXG: 0, Babylook: 0, 'Sob Medida': 0 });
+    setItems({ PP: 0, P: 0, M: 0, G: 0, GG: 0, EXG: 0, 'PP Babylook': 0, 'P Babylook': 0, 'M Babylook': 0, 'G Babylook': 0, 'GG Babylook': 0, 'EXG Babylook': 0, 'Sob Medida': 0 });
     setMedidasSobMedida({ pescoco: '', ombro: '', peito: '', cintura: '', quadril: '' });
     setShowForm(false);
   };
